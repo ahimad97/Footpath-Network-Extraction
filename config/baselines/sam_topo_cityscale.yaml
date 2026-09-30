@@ -1,0 +1,61 @@
+# SAM ViT-B encoder + SidewalkFormer topology GNN.
+# MODEL_TYPE: sam_topo. Training settings match the SAM-Road baseline.
+
+DATASET: 'cityscale'
+MODEL_TYPE: 'sam_topo'
+
+# SAM encoder settings
+SAM_VERSION: 'vit_b'                  # 'vit_b' | 'vit_l' | 'vit_h'
+SAM_CKPT_PATH: weights/sam_vit_b_01ec64.pth   # external SAM ViT-B checkpoint
+NO_SAM: False
+ENCODER_LORA: True
+LORA_RANK: 4
+USE_SAM_DECODER: False                # True → SAM mask decoder; False → naive ConvTranspose stack
+
+# Data & graph
+SEED: 42
+PATCH_SIZE: 512
+BATCH_SIZE: 16
+MAX_DEPTH: 1
+DATA_WORKER_NUM: 4
+gt_graph_pattern: 3
+
+# Training
+TRAIN_EPOCHS: 25
+BASE_LR: 0.0004
+FREEZE_ENCODER: False
+ENCODER_LR_FACTOR: 0.1
+LR_SCHEDULE: poly
+WARMUP_FRACTION: 0.05
+CKPT_MONITOR: val_loss
+CKPT_MODE: min
+EARLY_STOP_MONITOR: val_loss
+EARLY_STOP_MODE: min
+EARLY_STOP_PATIENCE: 12
+MASK_LOSS_WEIGHT: 1.0
+TOPO_LOSS_WEIGHT: 1.0
+FOCAL_LOSS_SEGMENTATION: False
+FOCAL_LOSS: False
+EDGE_POS_WEIGHT: 3
+balance_loss: False
+Weighted_Sampling: False
+
+# Topology GNN
+hidden_dim: 128
+num_layers: 4
+heads: 4
+conv_type: 'transformer'
+encoder_type: 'gnn'
+use_edge_attr: True
+decoder_type: 'pair'
+TOPONET_VERSION: 'normal'
+TOPO_SAMPLE_NUM: 128
+
+# Inference
+INFER_BATCH_SIZE: 8
+SAMPLE_MARGIN: 0
+INFER_PATCHES_PER_EDGE: 8
+TOPO_THRESHOLD: 0.500
+ROAD_NMS_RADIUS: 0
+NEIGHBOR_RADIUS: 130
+MAX_NEIGHBOR_QUERIES: 8

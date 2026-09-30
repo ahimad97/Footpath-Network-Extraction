@@ -1,0 +1,84 @@
+# Python and local tooling
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.DS_Store
+.idea/
+.vscode/
+.claude/
+
+# Environments and credentials
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+wandb/
+lightning_logs/
+
+# External datasets and imagery
+/data/
+/datasets/
+/images/
+/masks/
+/labels/
+/SF_Dataset/
+/Combined_Dataset/
+/Full_Combined_Dataset/
+/CVAT_dataset/
+/SidewalkFormer_first_training/
+**/20cities/
+**/RGB_1.0_meter/
+
+# Model weights and generated arrays/graphs
+/weights/
+/checkpoints/
+/sam_ckpts/
+/runs/
+/outputs/
+/evaluation_results/
+/viz_tests/
+*.pth
+*.pt
+*.ckpt
+*.npy
+*.npz
+*.p
+*.pickle
+*.pkl
+
+# Generated geospatial and media artifacts
+*.geojson
+*.graphml
+*.feather
+*.parquet
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+*.gif
+# README figures are allowed
+!docs/assets/**
+
+# Archives and temporary files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+/tmp/
+/cache/
+/debug/
+
+# Locally built APLS executable
+/evaluation/cityscale_metrics/apls/apls

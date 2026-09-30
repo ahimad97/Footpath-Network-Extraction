@@ -1,0 +1,125 @@
+# SidewalkFormer paper configuration: SegFormer-B5 + topology GNN, 1024 px patches.
+
+# =============================================================================
+# Data
+# =============================================================================
+DATASET: combined
+dataset_location: combined
+DATASET_ROOT: ''                # Or pass --dataset-root to train.py / validate.py.
+LEGACY_SPLIT: true              # Train/test split used for the released models.
+LEGACY_PATCH_GRID: true         # Patch grid used for the released models.
+SPLIT_SEED: 42                  # Seed of the tile split (independent of SEED).
+SEED: 42
+PATCH_SIZE: 1024
+BATCH_SIZE: 4
+DATA_WORKER_NUM: 8
+MAX_DEPTH: 1
+gt_graph_pattern: 3             # Graph-label variant for the CityScale layout.
+RETURN_IMAGE_PIL: False         # Also return the PIL patch from the dataset (for inspection).
+
+# =============================================================================
+# Model
+# =============================================================================
+MODEL_TYPE: segformer
+model_name: nvidia/segformer-b5-finetuned-cityscapes-1024-1024
+IMAGE_EMB_MODE: fuse2_4         # Fuse the last two encoder stages at 1/4 resolution.
+EMB_OUT_CH: 512
+
+# Topology GNN
+hidden_dim: 128
+heads: 4
+num_layers: 4
+conv_type: transformer
+encoder_type: gnn
+use_edge_attr: True
+decoder_type: pair
+UNDIRECTED_EDGE_PRED: True      # Score each candidate edge in both directions and average the logits.
+NODE_SAMPLE_GRID: 30            # Node features: attention-pooled grid of samples around each node.
+NODE_POS_ENC: True              # Sinusoidal positional encoding of node coordinates.
+EDGE_VISUAL_FEAT: True          # Image features sampled along each candidate edge.
+SEG_REFINEMENT: false           # Refine segmentation with a rasterised topology canvas (ablation).
+
+# Optional toggles
+SEG_ONLY: False                 # Train segmentation only (no topology GNN).
+FREEZE_SEGMENTATION: False      # Freeze encoder, decoder and fuser; train the topology head only.
+SEGFORMER_PRETRAINED_CKPT: ''   # Optional segmentation-only checkpoint to warm-start encoder/decoder.
+CUDNN_BENCHMARK: False          # cuDNN autotuner (faster, non-deterministic kernels).
+
+# =============================================================================
+# Optimisation
+# =============================================================================
+TRAIN_EPOCHS: 30
+BASE_LR: 0.0001
+ENCODER_LR_FACTOR: 0.1          # Encoder LR = BASE_LR * ENCODER_LR_FACTOR.
+FREEZE_ENCODER: False
+FREEZE_ENCODER_EPOCHS: 2        # Keep the encoder frozen for the first N epochs while the
+                                # new fuser/topology head stabilise. 0 disables.
+LR_SCHEDULE: cosine             # cosine | poly (linear warmup in both cases)
+POLY_EXPONENT: 0.5
+WARMUP_FRACTION: 0.10
+TOPO_WARMUP_FRACTION: 0.15      # Ramp the topology loss in over this fraction of steps.
+CKPT_MONITOR: val_loss
+CKPT_MODE: min
+EARLY_STOP_MONITOR: val_loss
+EARLY_STOP_MODE: min
+EARLY_STOP_PATIENCE: 8
+DETACH_TOPO_FEATURES: False     # True stops topology gradients from reaching the encoder.
+MPS_FREEZE_BATCHNORM: True      # Apple MPS workarounds for BatchNorm in the decoder.
+MPS_REPLACE_BATCHNORM: True
+
+# =============================================================================
+# Losses
+# =============================================================================
+MASK_LOSS_WEIGHT: 1.0
+TOPO_LOSS_WEIGHT: 1.0
+FOCAL_LOSS_SEGMENTATION: False
+USE_DICE_LOSS: True             # Segmentation loss = CE + DICE_LOSS_WEIGHT * Dice (foreground classes).
+DICE_LOSS_WEIGHT: 0.5
+EDGE_POS_WEIGHT: 2              # Positive-class weight of the edge BCE.
+CONN_LOSS_WEIGHT: 0.1           # Path-connectivity loss.
+LAPLACIAN_LOSS_WEIGHT: 0.0      # Fiedler-value connectivity hinge loss; 0 disables it.
+balance_loss: False             # Learned uncertainty weighting of the seg/topo losses.
+
+# =============================================================================
+# Training graph sampling
+# =============================================================================
+TRAIN_GRAPH_NODE_SOURCE: gt_graph   # 'gt_graph': jittered reference vertices.
+                                    # 'mask': mask/NMS node proposals (as at inference)
+                                    #         snapped to the reference graph for labels.
+ROAD_NMS_RADIUS: 0              # NMS radius (px) when sampling reference vertices.
+Weighted_Sampling: False        # Oversample vertices near junctions and crossovers.
+TOPO_SAMPLE_NUM: 256            # Vertices sampled per patch when Weighted_Sampling is on.
+
+# Only read when TRAIN_GRAPH_NODE_SOURCE is 'mask' (defaults shown):
+# TRAIN_MASK_NODE_SNAP_RADIUS: 65        # Max px distance to snap a mask node to a reference vertex.
+# TRAIN_MASK_DROP_UNSNAPPED_NODES: True  # Drop mask nodes that do not snap.
+# TRAIN_MASK_EMPTY_FALLBACK: True        # Fall back to reference vertices for patches without mask nodes.
+# TRAIN_MASK_EDGE_MAX_DEPTH: 1           # Graph hops that make a mask-node pair positive (overrides MAX_DEPTH).
+# TRAIN_MASK_SIDEWALK_LABELS: [1]        # Mask classes treated as sidewalk.
+# TRAIN_MASK_CROSSING_LABELS: [3, 4]     # Mask classes treated as crossing.
+# TRAIN_MASK_SIDEWALK_NMS_RADIUS: 55
+# TRAIN_MASK_CROSSING_NMS_RADIUS: 55
+
+# =============================================================================
+# Inference
+# =============================================================================
+INFER_BATCH_SIZE: 1
+SAMPLE_MARGIN: 130
+INFER_PATCHES_PER_EDGE: 8
+SIDEWALK_THRESHOLD: 0.30        # Class-probability thresholds for node proposals.
+CROSSING_THRESHOLD: 0.30
+SIDEWALK_NMS_RADIUS: 55         # Node spacing (px) after NMS.
+CROSSING_NMS_RADIUS: 55
+NEIGHBOR_RADIUS: 130            # Candidate edges link nodes within this distance (px) ...
+MAX_NEIGHBOR_QUERIES: 8         # ... up to this many neighbours per node.
+TOPO_THRESHOLD: 0.500           # Edge-probability threshold (per-tile floor in infer_city.py).
+TOPO_MERGE_THRESHOLD: 0.6       # Final threshold, applied once after the cross-tile merge.
+
+# =============================================================================
+# Ablation knobs (defaults = released model; change one at a time)
+# =============================================================================
+BRIDGE_EDGE_WEIGHT: 3.0         # Extra edge-loss weight on reference bridge edges; 1.0 disables it.
+NODE_JITTER_SIGMA: 5.0          # Std-dev (px) of the jitter on training vertices; 0 disables it.
+TRAIN_TILE_FRACTION: 1.0        # Fraction of training tiles used (val/test unchanged).
+# TILE_ID_EXCLUDE: []           # Tile ids or "lo-hi" ranges dropped before splitting (leave-one-city-out).
+# TILE_ID_INCLUDE: []           # If set, only these tile ids are used.

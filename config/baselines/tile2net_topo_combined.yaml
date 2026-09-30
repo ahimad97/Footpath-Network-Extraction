@@ -1,0 +1,116 @@
+# Tile2Net (HRNet-W48 + OCR + multi-scale attention) backbone + SidewalkFormer
+# topology GNN on the combined dataset at 1024 px. Same GNN, loss and schedule
+# settings as config/sidewalkformer.yaml; only the backbone differs. Only the
+# HRNet-W48 ImageNet weights are warm-started (no full Tile2Net checkpoint).
+DATASET: combined
+dataset_location: combined
+DATASET_ROOT: ''
+LEGACY_SPLIT: true
+LEGACY_PATCH_GRID: true
+
+MODEL_TYPE: tile2net_topo
+
+# ---- Tile2Net backbone settings ----
+TILE2NET_MSCALE: True                                                   # True -> MscaleOCR (two-scale fusion); False -> plain OCRNet.
+HRNET_CHECKPOINT: 'weights/hrnetv2_w48_imagenet_pretrained.pth'  # External HRNet-W48 ImageNet backbone weights.
+TILE2NET_CHECKPOINT: null                                               # null -> do NOT load a full fine-tuned Tile2Net snapshot (train from scratch).
+
+SEED: 42
+PATCH_SIZE: 1024
+BATCH_SIZE: 2                  # HRNet+OCR+Mscale at 1024 is memory-heavy (two-scale passes); raise to 4 if the GPU allows.
+MAX_DEPTH: 1
+DATA_WORKER_NUM: 8
+gt_graph_pattern: 3
+
+TRAIN_EPOCHS: 30
+BASE_LR: 0.0001
+FREEZE_ENCODER: False
+# Keep the encoder frozen for the first N epochs while the new topology head
+# stabilises. 0 disables.
+FREEZE_ENCODER_EPOCHS: 2
+ENCODER_LR_FACTOR: 0.1
+LR_SCHEDULE: cosine
+POLY_EXPONENT: 0.5
+WARMUP_FRACTION: 0.10
+TOPO_WARMUP_FRACTION: 0.15
+CKPT_MONITOR: val_loss
+CKPT_MODE: min
+EARLY_STOP_MONITOR: val_loss
+EARLY_STOP_MODE: min
+EARLY_STOP_PATIENCE: 8
+MASK_LOSS_WEIGHT: 1.0
+TOPO_LOSS_WEIGHT: 1.0
+DETACH_TOPO_FEATURES: False
+MPS_FREEZE_BATCHNORM: True
+MPS_REPLACE_BATCHNORM: True
+FOCAL_LOSS_SEGMENTATION: False
+# Mix soft-Dice with weighted CE for thin/sparse classes.
+# Total = CE + DICE_LOSS_WEIGHT * Dice (background excluded from Dice).
+USE_DICE_LOSS: True
+DICE_LOSS_WEIGHT: 0.5
+EDGE_POS_WEIGHT: 2
+balance_loss: False
+Weighted_Sampling: False
+EMB_OUT_CH: 512
+
+
+TOPO_SAMPLE_NUM: 256
+hidden_dim: 128
+heads: 4
+num_layers: 4
+conv_type: transformer
+encoder_type: gnn
+use_edge_attr: True
+decoder_type: pair
+
+NODE_SAMPLE_GRID: 30
+NODE_POS_ENC: True
+EDGE_VISUAL_FEAT: True
+SEG_REFINEMENT: false
+CONN_LOSS_WEIGHT: 0.1
+
+INFER_BATCH_SIZE: 1
+SAMPLE_MARGIN: 130
+INFER_PATCHES_PER_EDGE: 8
+SIDEWALK_THRESHOLD: 0.30
+CROSSING_THRESHOLD: 0.30
+TOPO_THRESHOLD: 0.500
+ROAD_NMS_RADIUS: 0
+SIDEWALK_NMS_RADIUS: 55
+CROSSING_NMS_RADIUS: 55
+NEIGHBOR_RADIUS: 130
+MAX_NEIGHBOR_QUERIES: 8
+
+
+# =============================================================================
+# Symmetric topology head: score (u,v) and (v,u) and average the logits.
+# =============================================================================
+UNDIRECTED_EDGE_PRED: True       # Score each candidate edge in both directions and average the logits (symmetric edge head).
+LAPLACIAN_LOSS_WEIGHT: 0.0       # Weight on the Fiedler-value (algebraic connectivity) hinge loss; 0 disables it.
+
+
+# =============================================================================
+# Training graph sampling (see config/sidewalkformer.yaml)
+# =============================================================================
+TRAIN_GRAPH_NODE_SOURCE: gt_graph
+
+
+# =============================================================================
+# Dataset / split
+# =============================================================================
+SPLIT_SEED: 42                  # Seed of the tile split (independent of SEED).
+RETURN_IMAGE_PIL: False
+
+
+# =============================================================================
+# Optional toggles
+# =============================================================================
+SEG_ONLY: False
+FREEZE_SEGMENTATION: False
+CUDNN_BENCHMARK: False
+
+
+# =============================================================================
+# Inference
+# =============================================================================
+TOPO_MERGE_THRESHOLD: 0.6       # Final probability cutoff applied once after the cross-tile graph merge.
