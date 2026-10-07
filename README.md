@@ -6,12 +6,7 @@
 ![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)
 ![PyTorch](https://img.shields.io/badge/PyTorch-Lightning-792ee5.svg)
 
-SidewalkFormer learns **where** pedestrian infrastructure is and **which
-points connect**. A good-looking sidewalk mask can still produce a broken
-network at crossings, under shadows, or beneath tree canopy. SidewalkFormer
-therefore predicts semantic segmentation and graph topology together, then
-stitches per-tile graphs into a city-scale network. The result can be loaded
-into GIS or routing tools.
+SidewalkFormer reconstructs pedestrian networks — sidewalks, crossings and connecting paths — from high-resolution aerial imagery. It jointly predicts semantic segmentation and graph topology, so the output is a connected, routable graph rather than a mask: each edge carries its confidence, type (sidewalk or crossing), and whether it bridges a tile seam. Per-tile graphs are stitched into continuous metropolitan-scale networks.
 
 > **Status:** code release. The dataset will be released soon (see the
 > [Roadmap](#roadmap)).
