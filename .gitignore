@@ -69,6 +69,7 @@ lightning_logs/
 *.gif
 # README figures are allowed
 !docs/assets/**
+!figures/**
 
 # Archives and temporary files
 *.zip

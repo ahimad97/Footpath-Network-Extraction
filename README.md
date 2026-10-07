@@ -39,26 +39,7 @@ into GIS or routing tools.
 
 ## How it works
 
-```text
- aerial tile (1024 × 1024)
-        │
-        ▼
- SegFormer-B5 encoder ───────────► segmentation head
-        │  fused multi-scale         background / sidewalk / road / crossing
-        │  features                          │
-        ▼                                    ▼
- candidate graph  ◄──────────────  node proposals (mask + NMS)
- (≤ 8 neighbours within 130 px, node + edge visual features)
-        │
-        ▼
- 4-layer TransformerConv GNN + pair decoder
- (symmetric edge scoring: forward/reverse logits averaged)
-        │
-        ▼
- per-tile graph ──► overlap averaging ──► cross-tile stitching ──► GeoJSON / NPZ
-                                                                 (confidence, link type,
-                                                                  synthetic seam flag)
-```
+![SidewalkFormer overview figure: ground truth, segmentation masks, predicted networks, and the segmentation and topology prediction pipeline.](figures/overview_figure.png)
 
 The paper configuration ([`config/sidewalkformer.yaml`](config/sidewalkformer.yaml)) uses:
 
@@ -100,6 +81,7 @@ SidewalkFormer/
 ├── config/                     # Paper config + baselines
 ├── evaluation/                 # Tile preparation, precision/recall/F1, APLS, K-APLS
 ├── docs/                       # Inference guide, model variants
+├── figures/                    # Paper overview figure used in this README
 ├── tests/                      # Unit and contract tests (no data needed)
 └── third_party/                # Vendored SAM-Road and Tile2Net (original licenses)
 ```
