@@ -19,6 +19,24 @@ networks.
 > [SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7662399). Code and
 > [trained weights](#pretrained-weights) are released.
 
+## Updates
+
+**26 October 2026 — Annotated tiles published.** The annotation masks and
+bounding boxes for each annotated image are available on
+[Google Drive](https://drive.google.com/drive/folders/1Hb_Hg9wTRNu-XjSMKLeqj71BBtHHptkr?usp=drive_link).
+The aerial imagery supplied by Vexcel cannot be redistributed under our
+licensing agreement. Users must obtain their own appropriately licensed imagery
+and align it with the annotation masks before use.
+
+Annotation masks encode the following pixel values:
+
+| Pixel value | Class |
+|---|---|
+| 0 | Background |
+| 1 | Sidewalk |
+| 2 | Road / drive |
+| 3 | Crossing, including zebra crossings |
+
 ## How it works
 
 ![SidewalkFormer overview figure: ground truth, segmentation masks, predicted networks, and the segmentation and topology prediction pipeline.](figures/overview_figure.png)
